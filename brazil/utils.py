@@ -1,16 +1,6 @@
 import numpy as np
-# import matplotlib.pyplot as plt
-# from scipy import stats
-from scipy.optimize import nnls, linprog
-# import scipy as sp
-# from scipy.io import savemat
-# from matplotlib.pyplot import MultipleLocator
-# import gurobipy as gp
+from scipy.optimize import nnls
 import cvxpy as cp
-# from gurobipy import GRB
-# import datetime
-# plt.switch_backend('agg')
-
 
 
 def marginal(d, k, choice):
@@ -101,13 +91,6 @@ def least_square(B, y, args=None):
 def perform_measure(B, data, y_noisy, args):
     """Return the performance measure of the mechanism.
 
-    Least square measure, abs error.
-    choice 0: l1 error
-    choice 1: l2 error
-    choice 2: l1 relative error
-    choice 3: l2 relative error
-
-    reg: Add regularization or not
     """
 
     x_est = least_square(B, y_noisy, args)
@@ -161,25 +144,12 @@ def transform_to_standard(B, S):
 
 
 def minimal_upper_bound(A1, A2, is_special=True):
-    if is_special:
-        P1 = A1 @ A1.T
-        P2 = A2 @ A2.T
+    P1 = A1 @ A1.T
+    P2 = A2 @ A2.T
 
-        vec, mat = np.linalg.eigh(P1-P2)
-        idx = np.where(vec > 1e-8)[0]
-        Core = P2 + (mat[:, idx] * (vec[idx])) @ mat[:, idx].T
-
-    else:
-        n, _ = np.shape(A1)
-        X = cp.Variable((n, n), symmetric=True)
-        # The operator >> denotes matrix inequality.
-        constraints = [X >> 0]
-        # constraints = []
-        constraints += [A1 @ A1.T - X << 0]
-        constraints += [A2 @ A2.T - X << 0]
-        prob = cp.Problem(cp.Minimize(cp.trace(X)), constraints)
-        prob.solve()
-        Core = X.value
+    vec, mat = np.linalg.eigh(P1-P2)
+    idx = np.where(vec > 1e-8)[0]
+    Core = P2 + (mat[:, idx] * (vec[idx])) @ mat[:, idx].T
     return Core
 
 

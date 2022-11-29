@@ -46,7 +46,7 @@ if __name__ == '__main__':
     args.sigma = 2
     args.sigma_noise = args.sigma
     args.param_x = 0.5
-    args.param_y = 3
+    args.param_y = 5
 
     sigma = args.sigma
     dims = 7

@@ -65,55 +65,47 @@ class CM:
 
     def get_SM(self):
         """Return select measure."""
-        # y_com = self.B_com @ self.data + noise(self.S_com)
-        # yc = stand_to_origin(self.B_com, y_com, self.Bc, self.Sc)
+        y_com = self.B_com @ self.data + noise(self.S_com)
+        yc = stand_to_origin(self.B_com, y_com, self.Bc, self.Sc)
 
-        yc = self.Bc @ self.data + noise(self.Sc)
+        # yc = self.Bc @ self.data + noise(self.Sc)
         choice = satisfy_user_target(self.args, yc)
-        # self.y_com = y_com
+        self.y_com = y_com
         return choice
 
-    # def get_PM(self, choice):
-    #     """Return perform measure."""
-    #     if choice == -1:
-    #         size = np.shape(self.B1)[0]
-    #         y_res = self.B1_res @ self.data + noise(self.S1_res)
-    #         S_add = np.eye(size) - (self.A11 @ self.A11.T + self.A12 @ self.A12.T)
-    #         y_rebuild = self.A11 @ self.y_com + self.A12 @ y_res + noise(S_add)
-    #         y = stand_to_origin(self.B1, y_rebuild, self.B01, self.S01)
-    #     elif choice == 1:
-    #         size = np.shape(self.B2)[0]
-    #         y_res = self.B2_res @ self.data + noise(self.S2_res)
-    #         S_add = np.eye(size) - (self.A21 @ self.A21.T + self.A22 @ self.A22.T)
-    #         y_rebuild = self.A21 @ self.y_com + self.A22 @ y_res + noise(S_add)
-    #         y = stand_to_origin(self.B2, y_rebuild, self.B02, self.S02)
-    #     return y
+    def get_PM(self, choice):
+        """Return perform measure."""
+        if choice == -1:
+            size = np.shape(self.B1)[0]
+            y_res = self.B1_res @ self.data + noise(self.S1_res)
+            S_add = np.eye(size) - (self.A11 @ self.A11.T + self.A12 @ self.A12.T)
+            y_rebuild = self.A11 @ self.y_com + self.A12 @ y_res + noise(S_add)
+            y = stand_to_origin(self.B1, y_rebuild, self.B01, self.S01)
+        elif choice == 1:
+            size = np.shape(self.B2)[0]
+            y_res = self.B2_res @ self.data + noise(self.S2_res)
+            S_add = np.eye(size) - (self.A21 @ self.A21.T + self.A22 @ self.A22.T)
+            y_rebuild = self.A21 @ self.y_com + self.A22 @ y_res + noise(S_add)
+            y = stand_to_origin(self.B2, y_rebuild, self.B02, self.S02)
+        return y
 
 
 def run_experiment(args, dataset, B1, S1, B2, S2):
     """Run experiment."""
     population = []
     N = np.shape(dataset)[0]
-    # rand_index = np.random.choice(range(N), args.blocks, replace=True)
-    # query_matrix = {-1: B1, 1: B2}
     com_mech = CM(args, B1, S1, B2, S2)
 
     plb = privacy_loss_budget(B1, S1)
     plb_saved = privacy_loss_budget(B1, np.diag(com_mech.diag_var))
-    # plb_saved = com_mech.plb_com
-    # sigma_select = get_sigma(B1, plb_saved)
     plb_ratio = plb_saved / plb
     plb_com = com_mech.plb_com
-    plb_remain = plb - plb_saved
-    # sigma_remain = {-1: get_sigma(B1, plb_remain), 1: get_sigma(B2, plb_remain)}
 
     total_count = 0
     com_count = 0
     base_count = 0
     algo1_count = 0
     algo2_count = 0
-    # base_err = 0
-    # com_err = 0
 
     for i in range(N):
         data = dataset[i, :]
@@ -124,26 +116,16 @@ def run_experiment(args, dataset, B1, S1, B2, S2):
             choice = com_mech.get_SM()
             y_true1 = B1 @ data
             y_select = y_true1 + noise(np.diag(com_mech.diag_var))
-            # y_select = B1 @ data + noise(com_mech.Sc)
-            # y_select = y_true1 + noise(cov_mat(B1) * sigma_select**2)
             base_label = satisfy_user_target(args, y_select)
             algo1_label = -1
             algo2_label = 1
 
             true_label = satisfy_user_target(args, y_true1)
-            # mat = query_matrix[true_label]
-            # y_true = mat @ data
 
             if true_label == choice:
                 com_count += 1
-                # y_choice = com_mech.get_PM(choice)
-                # com_err += mech_err(y_choice, y_true)
             if true_label == base_label:
                 base_count += 1
-                # if plb_remain > 0:
-                #     sigma_measure = sigma_remain[base_label]
-                #     y_base = y_true + noise(cov_mat(mat)*sigma_measure**2)
-                #     base_err += mech_err(y_base, y_true)
             if true_label == algo1_label:
                 algo1_count += 1
             if true_label == algo2_label:
@@ -151,11 +133,8 @@ def run_experiment(args, dataset, B1, S1, B2, S2):
 
             total_count += 1
 
-        # if i % 2000 == 0:
-        #     print("-------------------------  ", i, "  ---------------------------------")
-        # if not is_correct:
-        #     print("{0:6.1f} {1:7d} {2:7.2f} {3:7.2f} {4:7.2f} {5:7.2f}".format(
-        #         np.sum(data), idx, algo1_label, true_label, base_label, choice))
+        if i % 2000 == 0:
+            print("-------------------------  ", i, "  ---------------------------------")
 
     print("algo1 correct: ", algo1_count, "ratio: ", algo1_count / total_count * 100)
     print("algo2 correct: ", algo2_count, "ratio: ", algo2_count / total_count * 100)
@@ -166,8 +145,5 @@ def run_experiment(args, dataset, B1, S1, B2, S2):
     print("PLB saved: ", plb_saved, "Saved PLB Ratio: ", plb_ratio * 100)
 
     print("####################################################################")
-    # print("Sigma remained: ", sigma_remain)
-    # print("Base err: ", base_err / base_count)
-    # print("Com err: ", com_err / com_count)
     return com_mech
 

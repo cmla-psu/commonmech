@@ -74,7 +74,7 @@ if __name__ == '__main__':
     toc = time.time()
     print("time is: ", toc-tic)
 
-    track = {}
-    track['mat'] = com_mech.B_com
-    track['cov'] = com_mech.S_com
-    np.save("cm-brazil.npy", track, allow_pickle=True)
+    # track = {}
+    # track['mat'] = com_mech.B_com
+    # track['cov'] = com_mech.S_com
+    # np.save("cm-brazil.npy", track, allow_pickle=True)

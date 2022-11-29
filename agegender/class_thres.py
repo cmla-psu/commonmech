@@ -1,7 +1,6 @@
 from utils import *
 import argparse
 import numpy as np
-from scipy.linalg import block_diag
 
 
 def config():
@@ -27,98 +26,6 @@ def config():
     parser.add_argument('--sample_size', default=10, help='How many samples needed to select a mechanism.')
     parser.add_argument('--thresholds', default=[9, 20, 93], help='Hand tuned thresholds.')
     return parser.parse_args()
-
-
-class NodeNotFoundException(Exception):
-    def __init__(self, value):
-        self.value = value
-
-    def __str__(self):
-        return repr(self.value)
-
-
-class Node:
-    def __init__(self, key, index, children=None, com_mat=None, mat=None):
-        self.key = key
-        self.index = index
-        self.parent = None
-        self.children = children or []
-        self.mat = None
-        if mat is not None:
-            left, right = key
-            self.mat = mat[index, left:right].reshape(1, -1)
-            self.cov = np.eye(self.mat.shape[0])
-
-        self.com_mat = None
-        if com_mat is not None:
-            left, right = key
-            self.com_mat = com_mat[index, left:right].reshape(1, -1)
-            self.com_cov = np.eye(self.com_mat.shape[0])
-
-    def child_query(self):
-        query = []
-        for child in self.children:
-            query.append(child.mat)
-        return block_diag(*query)
-
-    def child_com_query(self):
-        com_query = []
-        for child in self.children:
-            if child.com_mat is None:
-                return None
-            com_query.append(child.com_mat)
-        return block_diag(*com_query)
-
-    def __str__(self):
-        return str(self.key)
-
-
-class NArrTree:
-    def __init__(self):
-        self.root = None
-        self.size = 0
-
-    def find_node(self, node, key):
-        if node is None or node.key == key:
-            return node
-        for child in node.children:
-            return_node = self.find_node(child, key)
-            if return_node:
-                return return_node
-        return None
-
-    def add(self, new_key, index, parent_key=None, com_mat=None, mat=None):
-        new_node = Node(new_key, index, None, com_mat, mat)
-        if parent_key is None:
-            self.root = new_node
-            self.size = 1
-        else:
-            parent_node = self.find_node(self.root, parent_key)
-            if not parent_key:
-                raise NodeNotFoundException('No element was found with the informed parent key.')
-            parent_node.children.append(new_node)
-            new_node.parent = parent_node
-            self.size += 1
-
-    def print_tree(self, node, str_aux):
-        if node is None:
-            return ""
-        str_aux += str(node) + '\n('
-        for i in range(len(node.children)):
-            child = node.children[i]
-            end = ',' if i < len(node.children) - 1 else ''
-            str_aux = self.print_tree(child, str_aux) + end
-        str_aux += ')'
-        return str_aux
-
-    def is_empty(self):
-        return self.size == 0
-
-    def lens(self):
-        return self.size
-
-    def __str__(self):
-        return self.print_tree(self.root, "")
 
 
 class Mechanism:
@@ -222,70 +129,10 @@ class CommonMechanism:
         return y_com
 
 
-def dfs(args, node, data, query, y_list, y_prev=None):
-    """Run a dfs search on the NArrTree."""
-    # nonlocal query
-    if node is None:
-        return
-    left, right = node.key
-    data_split = data[left: right]
-    if len(node.children) == 0:
-        return
-    else:
-        sub_query = node.child_query()
-        sub_com_query = node.child_com_query()
-        size = sub_query.shape[0]
-
-        B_com = node.com_mat
-        # if y_prev is None:
-        #     y_com = B_com @ data_split + noise(cov_mat(B_com))
-        # else:
-        #     y_com = np.array(y_prev).flatten()
-
-        y_com = B_com @ data_split + noise(cov_mat(B_com))
-        x_est = least_square(B_com, y_com, args)
-        assert len(y_com) == 1, "Not sum query"
-        sm = np.sum(x_est) * 2 * (size - 1) / size
-
-        if sm <= np.sqrt(2.0/np.pi) * size * args.sigma:
-            query.append(node.mat)
-            cur_mat = node.mat
-            cur_cov = cov_mat(cur_mat)
-            cur_mech = Mechanism(args, cur_mat, cur_cov)
-            y_cur = cur_mech.get_noisy_answer(data_split, B_com, cov_mat(B_com), y_com)
-            for y in y_cur:
-                y_list.append(y)
-            return
-        else:
-            if sub_com_query is None:
-                sub_mat = node.child_query()
-                sub_cov = cov_mat(sub_mat)
-                sub_mech = Mechanism(args, sub_mat, sub_cov)
-                y_sub = sub_mech.get_noisy_answer(data_split, B_com, cov_mat(B_com), y_com)
-                for i, child in enumerate(node.children):
-                    query.append(child.mat)
-                    y_list.append(y_sub[i])
-                return
-            else:
-                sub_com_mat = sub_com_query
-                sub_com_cov = cov_mat(sub_com_mat)
-                sub_com_mech = Mechanism(args, sub_com_mat, sub_com_cov)
-                y_sub_com = sub_com_mech.get_noisy_answer(data_split, B_com, cov_mat(B_com), y_com)
-                for i, child in enumerate(node.children):
-                    y_sub = y_sub_com[i]
-                    # child_left, child_right = child.key
-                    # child_size = child_right - child_left
-                    # print(B_com)
-                    # mat_sub = np.max(sub_com_mat[i, :]) * np.ones(child_size)
-                    dfs(args, child, data, query, y_list, y_sub)
-
-
 def run_experiment_adaptive(args, dataset, mech_list, clf):
     """Run experiment."""
-    err_thres = []
     population = []
     N = np.shape(dataset)[0]
-    rand_index = np.random.choice(range(N), args.blocks, replace=True)
 
     com_mech = CommonMechanism(args, mech_list)
     correct_count = 0
