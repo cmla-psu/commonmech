@@ -43,7 +43,7 @@ com_mech = CommonMechanism(args, [mech1, mech2, mech3])
 
 
 ## Datasets
-The datasets are provided as zip file, you need to unzip them and put them in a proper directory.
+The datasets are provided as zip files, you need to unzip them and put them in a proper directory.
 - **AgeGender.zip**: It contains a .npy file that combine data blocks in each state.
 - **HispRace.zip**: Each .npy file contains data blocks in one state. 
 - **Brazil.zip**: It groups the original Brazil Census data by (State, Occupation), the .npy contains data blocks after the grouping.
