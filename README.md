@@ -1,6 +1,6 @@
 # Common Mechanism 
 
-Sourse code for the paper  [Answering Private Queries Adaptively using the Common Mechanism](todo).
+Sourse code for the paper  [Answering Private Queries Adaptively using the Common Mechanism](https://arxiv.org/abs/2212.00135).
 
 ## Description
 
@@ -18,6 +18,7 @@ The algorithms are implemented in the following files.
 The following code gets the Common Mechanism of two linear Gaussian Mechanisms. You need to specify `B1, S1` as the query matrix and covariance matrix for mechanism 1, `B2, S2` as the query matrix and covariance matrix for mechanism 2.
 
 ```python
+# import the CM_rand.py in the brazil directory 
 from CM_rand import config, CM
 
 args = config()
@@ -29,7 +30,8 @@ com_mech = CM(args, B1, S1, B2, S2)
 The following code gets the Common Mechanism of three or more linear Gaussian Mechanisms. You need to specify `B1, S1` as the query matrix and covariance matrix for mechanism 1, `B2, S2` as the query matrix and covariance matrix for mechanism 2.
 
 ```python
-from CM_rand import config, Mechanism, CommonMechanism
+# import the class_finegrain.py in the agegender directory 
+from class_finegrain import config, Mechanism, CommonMechanism
 
 args = config()
 # Mechanism 1: (B1, S1)
@@ -61,10 +63,16 @@ The following files contain codes for experiments in the paper. Note that due to
 
 ## Citing this work
 
-You are encouraged to cite the paper [Answering Private Queries Adaptively using the Common Mechanism](todo) if you use this tool for academic research:
+You are encouraged to cite the paper [Answering Private Queries Adaptively using the Common Mechanism](https://arxiv.org/abs/2212.00135) if you use this tool for academic research:
 
 ```bibtex
-@article{todo
+@misc{xiao2022answering,
+      title={Answering Private Linear Queries Adaptively using the Common Mechanism}, 
+      author={Yingtai Xiao and Guanhong Wang and Danfeng Zhang and Daniel Kifer},
+      year={2022},
+      eprint={2212.00135},
+      archivePrefix={arXiv},
+      primaryClass={cs.CR}
 }
 ```
 
