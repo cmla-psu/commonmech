@@ -3,15 +3,19 @@ from CM_rand import config, CM
 import numpy as np
 
 args = config()
-# Mechanism 1: (B1, S1)
-# Mechanism 2: (B2, S2)
-B1 = np.array([[1, 1, 1, 0, 0, 0],
-               [0, 0, 0, 1, 1, 1]])
-S1 = np.eye(2)
-B2 = np.array([[1, 0, 0, 1, 0, 0],
-               [0, 1, 0, 0, 1, 0],
-               [0, 0, 1, 0, 0, 1]])
-S2 = np.eye(3)
+# B1 = np.array([[1, 1, 1, 0, 0, 0],
+#                [0, 0, 0, 1, 1, 1]])
+# S1 = np.eye(2)
+# B2 = np.array([[1, 0, 0, 1, 0, 0],
+#                [0, 1, 0, 0, 1, 0],
+#                [0, 0, 1, 0, 0, 1]])
+# S2 = np.eye(3)
+
+B1 = np.array([[1, 1, 1, 1]])
+S1 = np.eye(1)
+B2 = np.array([[1, 1, 0, 0],
+               [0, 0, 1, 1]])
+S2 = np.eye(2)
 
 com_mech = CM(args, B1, S1, B2, S2)
 B_com = com_mech.Bc
